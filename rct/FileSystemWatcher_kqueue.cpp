@@ -20,24 +20,6 @@ void FileSystemWatcher::init()
     EventLoop::eventLoop()->registerSocket(mFd, EventLoop::SocketRead, std::bind(&FileSystemWatcher::notifyReadyRead, this));
 }
 
-void FileSystemWatcher::destroy()
-{
-    struct kevent change;
-    struct timespec nullts = { 0, 0 };
-
-    EventLoop::eventLoop()->unregisterSocket(mFd);
-    for (Map<Path, int>::const_iterator it = mWatchedByPath.begin(); it != mWatchedByPath.end(); ++it) {
-        EV_SET(&change, it->second, EVFILT_VNODE, EV_DELETE, 0, 0, 0);
-        if (::kevent(mFd, &change, 1, 0, 0, &nullts) == -1) {
-            // bad stuff
-            error("FileSystemWatcher::~FileSystemWatcher() kevent failed for '%s' (%d) %s",
-                  it->first.constData(), errno, Rct::strerror().constData());
-        }
-        ::close(it->second);
-    }
-    close(mFd);
-}
-
 // TODO What is the proper way to shut down?
 void FileSystemWatcher::shutdown() {}
 
